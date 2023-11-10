@@ -174,12 +174,12 @@ func GetGroupInfo(l *ldap.Conn, Groupname string) (*ldap.Entry, string) {
 	)
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		//fmt.Println("search user error:", err.Error())
-		return nil, "search user error"
+		//fmt.Println("search group error:", err.Error())
+		return nil, "search group error"
 	}
 	if len(sr.Entries) == 0 {
-		//fmt.Println("User does not exist")
-		return nil, "User does not exist"
+		//fmt.Println("group does not exist")
+		return nil, "group does not exist"
 	}
 	if len(sr.Entries) > 1 {
 		//fmt.Println("too many entries returned")
