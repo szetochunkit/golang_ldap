@@ -81,14 +81,14 @@ func main() {
 
 	//add user to group
 	/*
-		Username := "jasondu"
+		Username := "sbb"
 		Groupname := "testgroup"
 		ldapapi.AddGroupMember(l, Username, Groupname)
 	*/
 
 	//remove user from group
 	/*
-		Username := "jasondu"
+		Username := "sbb"
 		Groupname := "testgroup"
 		ldapapi.RemoveGroupMember(l, Username, Groupname)
 	*/
