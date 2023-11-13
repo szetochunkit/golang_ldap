@@ -25,15 +25,11 @@ func BindLdap() (*ldap.Conn, error) {
 		return nil, err
 	}
 	fmt.Println("read cert OK")
-	// 创建根证书池
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(CaCert)
-	// 创建TLS配置
 	tlsConfig := &tls.Config{
-		// RootCAs: rootCertPool,
-		ClientCAs: caCertPool,
-		// ClientAuth:         tls.RequestClientCert,
-		InsecureSkipVerify: true, // 跳过服务器下发的证书验证
+		ClientCAs:          caCertPool,
+		InsecureSkipVerify: true,
 	}
 	//LdapAddr := LdapHost + ":" + LdapPort
 	LdapAddr := fmt.Sprintf("%s:%s", LdapHost, LdapPort)

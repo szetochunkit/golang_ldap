@@ -103,7 +103,7 @@ func main() {
 	//creat group
 	/*
 		Groupname := "test05"
-		OuPath := "OU=邮箱组,DC=lexintest,DC=com"
+		OuPath := ""
 		ldapapi.CreatGroup(l, Groupname, OuPath)
 	*/
 
