@@ -25,11 +25,11 @@ func main() {
 		//fmt.Println(userDepartment)
 	*/
 
-	//add user
+	//creat user
 	/*
 		Username := "asdfg"
 		OuPath := ""
-		ldapapi.AddUser(l, Username, OuPath)
+		ldapapi.CreatUser(l, Username, OuPath)
 	*/
 
 	//set user password
@@ -67,7 +67,7 @@ func main() {
 
 	//get group info
 	/*
-		Groupname := ""
+		Groupname := "testgroup"
 		GroupInfo, ReturnINfo := ldapapi.GetGroupInfo(l, Groupname)
 		if ReturnINfo != "" {
 			fmt.Println(ReturnINfo)
@@ -75,6 +75,36 @@ func main() {
 		//GroupInfo.Print()
 		member := GroupInfo.GetAttributeValues("member")
 		fmt.Println(member)
+		GroupDN := GroupInfo.DN
+		fmt.Println(GroupDN)
+	*/
+
+	//add user to group
+	/*
+		Username := "jasondu"
+		Groupname := "testgroup"
+		ldapapi.AddGroupMember(l, Username, Groupname)
+	*/
+
+	//remove user from group
+	/*
+		Username := "jasondu"
+		Groupname := "testgroup"
+		ldapapi.RemoveGroupMember(l, Username, Groupname)
+	*/
+	//modify group
+	/*
+		Groupname := "testgroup"
+		Attribute := "description"
+		Value := "test"
+		ldapapi.ModifyGroup(l, Groupname, Attribute, Value)
+	*/
+
+	//creat group
+	/*
+		Groupname := "test05"
+		OuPath := "OU=邮箱组,DC=lexintest,DC=com"
+		ldapapi.CreatGroup(l, Groupname, OuPath)
 	*/
 
 }

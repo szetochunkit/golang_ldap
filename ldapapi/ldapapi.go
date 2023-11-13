@@ -25,14 +25,15 @@ func BindLdap() (*ldap.Conn, error) {
 		return nil, err
 	}
 	fmt.Println("read cert OK")
+	// 创建根证书池
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(CaCert)
-
+	// 创建TLS配置
 	tlsConfig := &tls.Config{
 		// RootCAs: rootCertPool,
 		ClientCAs: caCertPool,
 		// ClientAuth:         tls.RequestClientCert,
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // 跳过服务器下发的证书验证
 	}
 	//LdapAddr := LdapHost + ":" + LdapPort
 	LdapAddr := fmt.Sprintf("%s:%s", LdapHost, LdapPort)
@@ -129,7 +130,7 @@ func SetNewPassword(l *ldap.Conn, Username string, NewPassword string) string {
 	return "modify OK"
 }
 
-func AddUser(l *ldap.Conn, Username string, OuPath string) string {
+func CreatUser(l *ldap.Conn, Username string, OuPath string) string {
 	UserDN := fmt.Sprintf("cn=%s,%s", Username, OuPath)
 	AddReq := ldap.NewAddRequest(UserDN, []ldap.Control{})
 	AddReq.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
@@ -138,10 +139,10 @@ func AddUser(l *ldap.Conn, Username string, OuPath string) string {
 	var err = l.Add(AddReq)
 	if err != nil {
 		fmt.Println("error adding service:", AddReq, err)
-		return "add error"
+		return "creat error"
 	}
-	fmt.Println("add OK")
-	return "add ok"
+	fmt.Println("creat OK")
+	return "creat ok"
 }
 
 func MoveUserToOU(l *ldap.Conn, Username string, OuPath string) string {
@@ -174,12 +175,12 @@ func GetGroupInfo(l *ldap.Conn, Groupname string) (*ldap.Entry, string) {
 	)
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		//fmt.Println("search group error:", err.Error())
-		return nil, "search group error"
+		//fmt.Println("search user error:", err.Error())
+		return nil, "search user error"
 	}
 	if len(sr.Entries) == 0 {
-		//fmt.Println("group does not exist")
-		return nil, "group does not exist"
+		//fmt.Println("User does not exist")
+		return nil, "User does not exist"
 	}
 	if len(sr.Entries) > 1 {
 		//fmt.Println("too many entries returned")
@@ -188,4 +189,80 @@ func GetGroupInfo(l *ldap.Conn, Groupname string) (*ldap.Entry, string) {
 	GroupInfo := sr.Entries[0]
 	//fmt.Println("UserDn:", reflect.TypeOf(UserDn))
 	return GroupInfo, ""
+}
+
+func AddGroupMember(l *ldap.Conn, Username string, Groupname string) string {
+	UserInfo, UserReturnINfo := GetUserInfo(l, Username)
+	if UserReturnINfo != "" {
+		return UserReturnINfo
+	}
+	UserDn := UserInfo.DN
+	GroupInfo, GroupReturnINfo := GetGroupInfo(l, Groupname)
+	if GroupReturnINfo != "" {
+		return GroupReturnINfo
+	}
+	GroupDn := GroupInfo.DN
+	ModifyReq := ldap.NewModifyRequest(GroupDn, nil)
+	ModifyReq.Add("member", []string{UserDn})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
+}
+
+func RemoveGroupMember(l *ldap.Conn, Username string, Groupname string) string {
+	UserInfo, UserReturnINfo := GetUserInfo(l, Username)
+	if UserReturnINfo != "" {
+		return UserReturnINfo
+	}
+	UserDn := UserInfo.DN
+	GroupInfo, GroupReturnINfo := GetGroupInfo(l, Groupname)
+	if GroupReturnINfo != "" {
+		return GroupReturnINfo
+	}
+	GroupDn := GroupInfo.DN
+	ModifyReq := ldap.NewModifyRequest(GroupDn, nil)
+	ModifyReq.Delete("member", []string{UserDn})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
+}
+
+func ModifyGroup(l *ldap.Conn, Groupname string, Attribute string, Value string) string {
+	GroupInfo, GroupReturnINfo := GetGroupInfo(l, Groupname)
+	if GroupReturnINfo != "" {
+		return GroupReturnINfo
+	}
+	GroupDn := GroupInfo.DN
+	ModifyReq := ldap.NewModifyRequest(GroupDn, nil)
+	ModifyReq.Replace(Attribute, []string{Value})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
+}
+
+func CreatGroup(l *ldap.Conn, Groupname string, OuPath string) string {
+	GroupDN := fmt.Sprintf("cn=%s,%s", Groupname, OuPath)
+	AddReq := ldap.NewAddRequest(GroupDN, []ldap.Control{})
+	AddReq.Attribute("objectClass", []string{"top", "group"})
+	AddReq.Attribute("sAMAccountName", []string{Groupname})
+	AddReq.Attribute("displayname", []string{Groupname})
+	var err = l.Add(AddReq)
+	if err != nil {
+		fmt.Println("error adding service:", AddReq, err)
+		return "creat error"
+	}
+	fmt.Println("creat OK")
+	return "creat ok"
 }
