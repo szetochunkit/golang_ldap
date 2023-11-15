@@ -187,7 +187,7 @@ func GetGroupInfo(l *ldap.Conn, Groupname string) (*ldap.Entry, string) {
 	return GroupInfo, ""
 }
 
-func AddGroupMember(l *ldap.Conn, Username string, Groupname string) string {
+func AddUserTOGroup(l *ldap.Conn, Username string, Groupname string) string {
 	UserInfo, UserReturnINfo := GetUserInfo(l, Username)
 	if UserReturnINfo != "" {
 		return UserReturnINfo
@@ -209,7 +209,7 @@ func AddGroupMember(l *ldap.Conn, Username string, Groupname string) string {
 	return "modify OK"
 }
 
-func RemoveGroupMember(l *ldap.Conn, Username string, Groupname string) string {
+func RemoveUserFromGroup(l *ldap.Conn, Username string, Groupname string) string {
 	UserInfo, UserReturnINfo := GetUserInfo(l, Username)
 	if UserReturnINfo != "" {
 		return UserReturnINfo
@@ -261,4 +261,140 @@ func CreatGroup(l *ldap.Conn, Groupname string, OuPath string) string {
 	}
 	fmt.Println("creat OK")
 	return "creat ok"
+}
+
+func GetOrganizationalUnitInfo(l *ldap.Conn, OuDN string) (*ldap.Entry, string) {
+	searchRequest := ldap.NewSearchRequest(
+		BaseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(&(objectclass=organizationalUnit)(DistinguishedName=%s))", OuDN),
+		//[]string{"dn"},
+		[]string{},
+		nil,
+	)
+	sr, err := l.Search(searchRequest)
+	if err != nil {
+		//fmt.Println("search user error:", err.Error())
+		return nil, "search user error"
+	}
+	if len(sr.Entries) == 0 {
+		//fmt.Println("User does not exist")
+		return nil, "User does not exist"
+	}
+	if len(sr.Entries) > 1 {
+		//fmt.Println("too many entries returned")
+		return nil, "too many entries returned"
+	}
+	OuInfo := sr.Entries[0]
+	//fmt.Println("UserDn:", reflect.TypeOf(UserDn))
+	return OuInfo, ""
+}
+
+func CreatOrganizationalUnit(l *ldap.Conn, OuName string, OuPath string) string {
+	OuDN := fmt.Sprintf("OU=%s,%s", OuName, OuPath)
+	AddReq := ldap.NewAddRequest(OuDN, []ldap.Control{})
+	AddReq.Attribute("objectClass", []string{"top", "organizationalUnit"})
+	AddReq.Attribute("name", []string{OuName})
+	var err = l.Add(AddReq)
+	if err != nil {
+		fmt.Println("error adding service:", AddReq, err)
+		return "creat error"
+	}
+	fmt.Println("creat OK")
+	return "creat ok"
+}
+
+func ModifyOrganizationalUnit(l *ldap.Conn, OuDN string, Attribute string, Value string) string {
+	ModifyReq := ldap.NewModifyRequest(OuDN, nil)
+	ModifyReq.Replace(Attribute, []string{Value})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
+}
+
+func GetOuAllUsers(l *ldap.Conn, OuPath string) ([]*ldap.Entry, string) {
+	searchRequest := ldap.NewSearchRequest(
+		OuPath,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(&(objectclass=user))"),
+		[]string{},
+		nil,
+	)
+	sr, err := l.Search(searchRequest)
+	if err != nil {
+		return nil, "search user error"
+	}
+	if len(sr.Entries) == 0 {
+		//fmt.Println("User does not exist")
+		return nil, "User does not exist"
+	}
+
+	return sr.Entries, ""
+}
+
+func GetOuAllGroups(l *ldap.Conn, OuPath string) ([]*ldap.Entry, string) {
+	searchRequest := ldap.NewSearchRequest(
+		OuPath,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(&(objectclass=group))"),
+		[]string{},
+		nil,
+	)
+	sr, err := l.Search(searchRequest)
+	if err != nil {
+		return nil, "search group error"
+	}
+	if len(sr.Entries) == 0 {
+		//fmt.Println("User does not exist")
+		return nil, "group does not exist"
+	}
+	return sr.Entries, ""
+}
+
+func AddSubGroupToGroup(l *ldap.Conn, SubGroupname string, Groupname string) string {
+	SubGroupInfo, SubGroupReturnINfo := GetGroupInfo(l, SubGroupname)
+	if SubGroupReturnINfo != "" {
+		return SubGroupReturnINfo
+	}
+	GroupInfo, GroupReturnINfo := GetGroupInfo(l, Groupname)
+	if GroupReturnINfo != "" {
+		return GroupReturnINfo
+	}
+	SubGroupDn := SubGroupInfo.DN
+	GroupDn := GroupInfo.DN
+	ModifyReq := ldap.NewModifyRequest(GroupDn, nil)
+	ModifyReq.Add("member", []string{SubGroupDn})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
+}
+
+func RemoveSubGroupFromGroup(l *ldap.Conn, SubGroupname string, Groupname string) string {
+	SubGroupInfo, SubGroupReturnINfo := GetGroupInfo(l, SubGroupname)
+	if SubGroupReturnINfo != "" {
+		return SubGroupReturnINfo
+	}
+	GroupInfo, GroupReturnINfo := GetGroupInfo(l, Groupname)
+	if GroupReturnINfo != "" {
+		return GroupReturnINfo
+	}
+	SubGroupDn := SubGroupInfo.DN
+	GroupDn := GroupInfo.DN
+	ModifyReq := ldap.NewModifyRequest(GroupDn, nil)
+	ModifyReq.Delete("member", []string{SubGroupDn})
+	var err = l.Modify(ModifyReq)
+	if err != nil {
+		fmt.Println("modify error", err.Error())
+		return "modify error"
+	}
+	fmt.Println("modify OK")
+	return "modify OK"
 }

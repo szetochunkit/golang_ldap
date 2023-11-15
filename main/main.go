@@ -106,5 +106,73 @@ func main() {
 		OuPath := ""
 		ldapapi.CreatGroup(l, Groupname, OuPath)
 	*/
+	//get OU info
+	/*
+		OUDN := ""
+		OuInfo, ReturnINfo := ldapapi.GetOrganizationalUnitInfo(l, OUDN)
+		if ReturnINfo != "" {
+			fmt.Println(ReturnINfo)
+		}
+		OuInfo.Print()
+	*/
+
+	// creat OU
+	/*
+		OuName := "168"
+		OuPath := ""
+		ldapapi.CreatOrganizationalUnit(l, OuName, OuPath)
+	*/
+
+	//modify OU
+	/*
+		OuDN := ""
+		Attribute := "description"
+		Value := "test"
+		ldapapi.ModifyOrganizationalUnit(l, OuDN, Attribute, Value)
+	*/
+
+	//get ou all users
+	/*
+		OuPath := ""
+		AllUsers, ReturnINfo := ldapapi.GetOuAllUsers(l, OuPath)
+		if ReturnINfo != "" {
+			fmt.Println(ReturnINfo)
+		}
+		//for index, item := range AllUsers {
+		//	fmt.Println(index)
+		//	fmt.Println(item.GetAttributeValue("sAMAccountName"))
+		//}
+
+		for i := 0; i < len(AllUsers); i++ {
+			fmt.Println(i)
+			fmt.Println(AllUsers[i].GetAttributeValue("sAMAccountName"))
+		}
+	*/
+	//get ou all groups
+	/*
+		OuPath := ""
+		AllGroups, ReturnINfo := ldapapi.GetOuAllGroups(l, OuPath)
+		if ReturnINfo != "" {
+			fmt.Println(ReturnINfo)
+		}
+		for i := 0; i < len(AllGroups); i++ {
+			fmt.Println(i)
+			fmt.Println(AllGroups[i].GetAttributeValue("sAMAccountName"))
+		}
+	*/
+
+	//add subgroup to group
+	/*
+		SubGroupname := "testgroup1"
+		Groupname := "testgroup2"
+		ldapapi.AddSubGroupToGroup(l, SubGroupname, Groupname)
+	*/
+
+	//remove subgroup from group
+	/*
+		SubGroupname := "testgroup1"
+		Groupname := "testgroup2"
+		ldapapi.RemoveSubGroupFromGroup(l, SubGroupname, Groupname)
+	*/
 
 }
