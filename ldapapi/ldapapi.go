@@ -131,7 +131,7 @@ func CreatUser(l *ldap.Conn, Username string, OuPath string) string {
 	AddReq := ldap.NewAddRequest(UserDN, []ldap.Control{})
 	AddReq.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
 	AddReq.Attribute("sAMAccountName", []string{Username})
-	AddReq.Attribute("userPrincipalName", []string{fmt.Sprintf("%s@lexintest.com", Username)})
+	AddReq.Attribute("userPrincipalName", []string{fmt.Sprintf("%s@test.com", Username)})
 	var err = l.Add(AddReq)
 	if err != nil {
 		fmt.Println("error adding service:", AddReq, err)
