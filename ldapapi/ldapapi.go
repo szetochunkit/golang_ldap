@@ -18,6 +18,41 @@ const (
 	BaseDN   = "DC=test,DC=com"
 )
 
+func filetimeToFormattedString(filetime uint64) string {
+	// 1601-01-01 00:00:00 UTC 对应的 FileTime 值（以纳秒为单位）
+	const filetimeEpoch = 116444736000000000
+
+	// 将 FileTime 转换为纳秒并减去起始的差值
+	ns := int64(filetime) - filetimeEpoch
+
+	// 将纳秒转换为秒
+	secs := ns / 10000000 // 100纳秒 = 0.0000001秒，所以10^7纳秒 = 1秒
+
+	// 使用秒数创建 time.Time 对象
+	timeObj := time.Unix(secs, 0)
+
+	// 将 time.Time 对象格式化为所需的字符串格式
+	return timeObj.Format("2006/1/2 15:04:05")
+}
+func formattedStringToLDAPTimestamp(formattedTime string) string {
+	// 解析格式化的日期时间字符串为 time.Time 对象
+	parsedTime, err := time.Parse("2006-1-2 15:04:05", formattedTime)
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return ""
+	}
+
+	// 1601-01-01 00:00:00 UTC 对应的纳秒数
+	const filetimeEpoch = 116444736000000000
+
+	// 获取时间对象对应的纳秒数并计算与FileTime的起始值的差
+	totalNanoseconds := parsedTime.UnixNano()
+	ldapTimestamp := totalNanoseconds/100 + filetimeEpoch
+
+	// 转换为字符串并返回18-digit LDAP timestamp格式
+	return fmt.Sprintf("%018d", ldapTimestamp)
+}
+
 func BindLdap() (*ldap.Conn, error) {
 	CaCert, err := ioutil.ReadFile(CertPath)
 	if err != nil {
@@ -397,4 +432,61 @@ func RemoveSubGroupFromGroup(l *ldap.Conn, SubGroupname string, Groupname string
 	}
 	fmt.Println("modify OK")
 	return "modify OK"
+}
+
+func SetPasswordNeverExpires(l *ldap.Conn, Username string) string {
+	//ModifyUser(l *ldap.Conn, Username string, Attribute string, Value string)
+	Attribute := "userAccountControl"
+	Value := "66048"
+	ReturnStr := ModifyUser(l, Username, Attribute, Value)
+	return ReturnStr
+}
+
+func CancelPasswordNeverExpires(l *ldap.Conn, Username string) string {
+	//ModifyUser(l *ldap.Conn, Username string, Attribute string, Value string)
+	Attribute := "userAccountControl"
+	Value := "512"
+	ReturnStr := ModifyUser(l, Username, Attribute, Value)
+	return ReturnStr
+}
+
+func EnableUser(l *ldap.Conn, Username string) string {
+	Attribute := "userAccountControl"
+	Value := "512"
+	ReturnStr := ModifyUser(l, Username, Attribute, Value)
+	return ReturnStr
+}
+
+func DisableUser(l *ldap.Conn, Username string) string {
+	Attribute := "userAccountControl"
+	Value := "514"
+	ReturnStr := ModifyUser(l, Username, Attribute, Value)
+	return ReturnStr
+}
+
+func SetUserManager(l *ldap.Conn, Username string, ManagerUsername string) string {
+	Attribute := "manager"
+	ManagerUserInfo, ManagerUserReturnStr := GetUserInfo(l, ManagerUsername)
+	if ManagerUserReturnStr != "" {
+		fmt.Println(ManagerUserReturnStr)
+		return ManagerUserReturnStr
+	}
+	ManagerUserDN := ManagerUserInfo.DN
+	ReturnStr := ModifyUser(l, Username, Attribute, ManagerUserDN)
+	return ReturnStr
+}
+
+func SetAccountExpirationDate(l *ldap.Conn, Username string, ExpirationDate string) string {
+	ldapTimestamp := formattedStringToLDAPTimestamp(ExpirationDate)
+	// 输出转换后的18-digit LDAP timestamp值
+	fmt.Println("18-digit LDAP Timestamp:", ldapTimestamp)
+	Attribute := "accountExpires"
+	ReturnStr := ModifyUser(l, Username, Attribute, ldapTimestamp)
+	return ReturnStr
+}
+
+func SetAccountNotExpired(l *ldap.Conn, Username string) string {
+	Attribute := "accountExpires"
+	ReturnStr := ModifyUser(l, Username, Attribute, "0")
+	return ReturnStr
 }
